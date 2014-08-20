@@ -1,0 +1,5 @@
+*.jpg
+Debug
+C++AMP_practice/Debug
+C++AMP_practice.sdf
+ipch
