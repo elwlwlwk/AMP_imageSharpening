@@ -45,23 +45,24 @@ int ampSharpen(const Mat& myImage, Mat& Result){
 	cout << "c++amp init start" << endl;
 	CV_Assert(myImage.depth() == CV_8U);
 	Result.create(myImage.size(), myImage.type());
-	int image_size = myImage.rows* myImage.cols*3;
+	const int channels = myImage.channels();
+	int image_size = myImage.rows* myImage.cols*channels;
 	vector<int> vOrigin(image_size);
 	vector<int> vResult(image_size);
 
 	vOrigin.assign(&myImage.data[0], &myImage.data[0]+image_size);
 
-	array_view<int, 2> avOrigin(myImage.rows, myImage.cols*3, vOrigin);
-	array_view<int, 2> avResult(myImage.rows, myImage.cols*3, vResult);
+	array_view<int, 2> avOrigin(myImage.rows, myImage.cols*channels, vOrigin);
+	array_view<int, 2> avResult(myImage.rows, myImage.cols*channels, vResult);
 	avResult.discard_data();
 	cout << "c++amp init end" << endl;
 	cout << "c++amp calculate start" << endl;
 	concurrency::parallel_for_each(avResult.extent, [=](index<2> idx) restrict(amp){
-		if (idx[0]<1 || idx[0]>avResult.extent[0]-2 || idx[1]<3 || idx[1]>avResult.extent[1]-4){
+		if (idx[0]<1 || idx[0]>avResult.extent[0]-2 || idx[1]<channels || idx[1]>avResult.extent[1]-channels-1){
 			avResult[idx] = avOrigin[idx];
 		}
 		else{
-			avResult[idx] = fmin(fmax(avOrigin[idx] * 5 - avOrigin(idx[0] - 1, idx[1]) - avOrigin(idx[0] + 1, idx[1]) - avOrigin(idx[0], idx[1] - 3) - avOrigin(idx[0], idx[1] + 3), 0), 255);
+			avResult[idx] = fmin(fmax(avOrigin[idx] * 5 - avOrigin(idx[0] - 1, idx[1]) - avOrigin(idx[0] + 1, idx[1]) - avOrigin(idx[0], idx[1] - channels) - avOrigin(idx[0], idx[1] + channels), 0), 255);
 		}
 	});
 	avResult.synchronize();
@@ -74,7 +75,7 @@ int ampSharpen(const Mat& myImage, Mat& Result){
 
 int _tmain(int argc, _TCHAR* argv[])
 {
-	String dir = "test.jpg";
+	String dir = "test4.jpg";
 	Mat image = imread(dir,IMREAD_COLOR);
 	Mat result, result2;
 	int a = min(355, 244);
